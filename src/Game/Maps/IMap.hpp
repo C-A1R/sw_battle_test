@@ -5,8 +5,6 @@
 namespace sw
 {
 
-class IUnit;
-
 /// @brief interface for gemeboards
 class IMap
 {
@@ -18,7 +16,7 @@ public:
     virtual bool isValid() const = 0;
 
     /// @brief Spawn any unit
-    virtual bool spawn(const std::shared_ptr<IUnit> &unit, const std::uint32_t x, const std::uint32_t y) = 0; /// @todo fix dependency on coordinates
+    virtual bool spawn(const std::uint32_t unitId, const std::uint32_t x, const std::uint32_t y) = 0; /// @todo fix dependency on coordinates
 
 protected:
     /// @brief To check that point is avaliable to move or spawn

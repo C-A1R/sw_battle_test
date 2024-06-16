@@ -2,8 +2,6 @@
 
 #include <stdexcept>
 
-#include "../Units/IUnit.hpp"
-
 namespace sw
 {
 
@@ -17,13 +15,13 @@ bool RectangleMap::isValid() const
     return _model.size() && _model[0].size();
 }
 
-bool RectangleMap::spawn(const std::shared_ptr<IUnit> &unit, const std::uint32_t x, const std::uint32_t y)
+bool RectangleMap::spawn(const std::uint32_t unitId, const std::uint32_t x, const std::uint32_t y)
 {
     if (!isVacant(x, y))
     {
         return false;
     }
-    _model[x][y] = unit->id();
+    _model[x][y] = unitId;
     return true;
 }
 

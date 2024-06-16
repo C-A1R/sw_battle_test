@@ -18,7 +18,7 @@ public:
 
 protected:
     bool isValid() const override;
-    bool spawn(const std::shared_ptr<IUnit> &unit, const std::uint32_t x, const std::uint32_t y) override;
+    bool spawn(const std::uint32_t unitId, const std::uint32_t x, const std::uint32_t y) override;
 
 private:
     bool isVacant(const std::uint32_t x, const std::uint32_t y) const override;

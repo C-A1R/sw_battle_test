@@ -3,11 +3,9 @@
 namespace sw
 {
 
-using sc = std::chrono::system_clock;
-
 void Battle::UnitRegister::insert(const std::shared_ptr<IUnit> &unit)
 {
-    _units_by_time.emplace(sc::to_time_t(sc::now()), unit);
+    _units_by_time.emplace(++_count, unit);
     _units_by_id.emplace(unit->id(), unit);
 }
 
@@ -29,10 +27,11 @@ std::shared_ptr<IUnit> Battle::UnitRegister::find(std::uint32_t id)
 
 void Battle::run()
 {
-    // game creating
+    uint32_t tick = 1;
+    // create game in the first tick
     while(!_global_actions.empty())
     {
-        _global_actions.front()();
+        _global_actions.front()(tick);
         _global_actions.pop();
     }
 
@@ -49,7 +48,24 @@ void Battle::run()
         throw std::runtime_error(std::string("Error: there are no units in the game"));
     }
 
-
+    bool noActionsEcecuted = false;
+    while (1)
+    {
+        noActionsEcecuted = true;
+        for(auto i = _units.begin(); i != _units.end(); ++i)
+        {
+            if (i->second->execAction(tick))
+            {
+                ++tick;
+                noActionsEcecuted = false;
+                /// @todo do event log here
+            }
+        }
+        if (noActionsEcecuted)
+        {
+            break;
+        }
+    }
 }
 
 } // namespace sw
