@@ -4,6 +4,12 @@
 
 namespace sw
 {
+    /// @todo remove later
+    struct PlaneCoordinnates 
+    {
+        uint32_t _x {0};
+        uint32_t _y {0};
+    };
 
 /// @brief interface for gemeboards
 class IMap
@@ -17,6 +23,11 @@ public:
 
     /// @brief Spawn any unit
     virtual bool spawn(const std::uint32_t unitId, const std::uint32_t x, const std::uint32_t y) = 0; /// @todo fix dependency on coordinates
+
+    /// @brief Move any unit
+    virtual bool move(const std::uint32_t unitId, const std::uint32_t targetX, const std::uint32_t targetY) = 0; /// @todo fix dependency on coordinates
+
+    virtual PlaneCoordinnates getCoordinnates(const std::uint32_t unitId, bool &ok) const = 0;
 
 protected:
     /// @brief To check that point is avaliable to move or spawn

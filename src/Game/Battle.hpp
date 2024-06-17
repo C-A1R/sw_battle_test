@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <map>
 #include <unordered_map>
 #include <queue>
 #include <functional>
@@ -15,11 +16,16 @@
 #include "Units/Warrior.hpp"
 #include "Units/Archer.hpp"
 
+#include "Units/IUnitAction.hpp"
+
 #include <IO/System/PrintDebug.hpp>
 #include <IO/System/EventLog.hpp>
 #include <IO/Events/MapCreated.hpp>
 #include <IO/Events/UnitSpawned.hpp>
 #include <IO/Events/MarchStarted.hpp>
+#include <IO/Events/UnitMoved.hpp>
+#include <IO/Events/MarchEnded.hpp>
+
 
 
 namespace sw
@@ -29,14 +35,14 @@ class Battle
 {
     class UnitRegister
     {
-        std::unordered_map<std::uint32_t, std::shared_ptr<IUnit>>   _units_by_time;
+        std::map<std::uint32_t, std::shared_ptr<IUnit>>             _units_by_time;
         std::unordered_map<std::uint32_t, std::shared_ptr<IUnit>>   _units_by_id;
         std::uint32_t _count {0};
     public:
         UnitRegister() = default;
         void insert(const std::shared_ptr<IUnit> &unit);
         bool empty() const;
-        std::shared_ptr<IUnit> find(std::uint32_t id);
+        std::shared_ptr<IUnit> find(const std::uint32_t id);
 
         auto begin() { return _units_by_time.begin(); }
         auto end() { return _units_by_time.end(); }
@@ -44,7 +50,7 @@ class Battle
 
     std::shared_ptr<IMap>   _map;
     UnitRegister            _units;
-    std::queue<std::function<void(uint32_t &)>> _global_actions;
+    std::queue<std::function<void(uint32_t &)>> _startup_actions; ///< actions to execute when the game starts
     EventLog                _eventLog;
 
 public:
@@ -57,7 +63,7 @@ public:
     template<>
     void addCommand(io::CreateMap &&cmd)
     {
-        _global_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick) mutable
+        _startup_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick)
         {
             if (!cmd.width || !cmd.height)
             {
@@ -70,53 +76,52 @@ public:
     template<>
     void addCommand(io::SpawnWarrior &&cmd)
     {
-        _global_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick) mutable
+        _startup_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick)
         {
             if (!_map)
             {
                 return;
             }
-            std::shared_ptr<IUnit> unit = std::make_shared<Warrior>(cmd.unitId, cmd.hp, cmd.strength);
-            unit->setMap(_map);
-            if (unit->spawn(cmd.x, cmd.y))
+            if (_map->spawn(cmd.unitId, cmd.x, cmd.y))
             {
-                _units.insert(unit);
+                _units.insert(std::make_shared<Warrior>(cmd.unitId, cmd.hp, cmd.strength));
             }
-            _eventLog.log(tick, io::UnitSpawned{unit->id(), "Warrior", cmd.x, cmd.y });
+            _eventLog.log(tick, io::UnitSpawned{cmd.unitId, "Warrior", cmd.x, cmd.y });
         });
     }
     template<>
     void addCommand(io::SpawnArcher &&cmd)
     {
-        _global_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick) mutable
+        _startup_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick)
         {
             if (!_map)
             {
                 return;
             }
-            std::shared_ptr<IUnit> unit = std::make_shared<Archer>(cmd.unitId, cmd.hp, cmd.strength, cmd.range, cmd.agility);
-            unit->setMap(_map);
-            if (unit->spawn(cmd.x, cmd.y))
+            if (_map->spawn(cmd.unitId, cmd.x, cmd.y))
             {
-                _units.insert(unit);
+                _units.insert(std::make_shared<Archer>(cmd.unitId, cmd.hp, cmd.strength, cmd.range, cmd.agility));
             }
-            _eventLog.log(tick, io::UnitSpawned{unit->id(), "Archer", cmd.x, cmd.y });
+            _eventLog.log(tick, io::UnitSpawned{cmd.unitId, "Archer", cmd.x, cmd.y });
         });
     }
     template<>
     void addCommand(io::March &&cmd)
     {
-        _global_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick) mutable
+        _startup_actions.emplace([cmd = std::move(cmd), this](uint32_t &tick) mutable
         {
             auto unit = _units.find(cmd.unitId);
             if (!unit)
             {
                 return;
             }
-            unit->march(cmd.targetX, cmd.targetY, [this](const int32_t tick) mutable
+
+            std::vector<std::unique_ptr<IUnitAction>> actions;
+            splitMarch(std::move(cmd), actions);
+            for (int i = 0; i < actions.size(); ++i)
             {
-                _eventLog.log(tick, io::MarchStarted{ 1, 5, 3, 7, 9 });
-            });/// @todo
+                unit->addAction(std::move(actions[i]));
+            }
         });
     }
     template<>
@@ -126,6 +131,72 @@ public:
     }
 
     void run();
+
+private:
+    /// @brief separate march to several moves
+    void splitMarch(io::March &&cmd, std::vector<std::unique_ptr<IUnitAction>> &actions)
+    {
+        bool ok = true;
+        const PlaneCoordinnates currentCoords = _map->getCoordinnates(cmd.unitId, ok);
+        if (!ok)
+        {
+            return;
+        }
+
+        if (currentCoords._x == cmd.targetX && currentCoords._y == cmd.targetY)
+        {
+            return;
+        }
+
+        /// the longest march length
+        uint32_t marchLen = std::max(currentCoords._x, cmd.targetX) - std::min(currentCoords._x, cmd.targetX)
+                            + std::max(currentCoords._y, cmd.targetY) - std::min(currentCoords._y, cmd.targetY);
+        actions.reserve(marchLen + 2);
+        //start march
+        actions.push_back(std::make_unique<MarchStartAction>([this, cmd, currentCoords](const int32_t tick)
+        {
+            _eventLog.log(tick, io::MarchStarted{ cmd.unitId, currentCoords._x, currentCoords._y
+                                                    , cmd.targetX, cmd.targetY });
+        }));
+        PlaneCoordinnates tmpCoords = currentCoords;
+        //move
+        auto _doStep = [&tmpCoords, &cmd]()
+        {
+            if (tmpCoords._x < cmd.targetX)
+            {
+                ++tmpCoords._x;
+            }
+            else if (tmpCoords._x > cmd.targetX)
+            {
+                --tmpCoords._x;
+            }
+            
+            if (tmpCoords._y < cmd.targetY)
+            {
+                ++tmpCoords._y;
+            }
+            else if (tmpCoords._y > cmd.targetY)
+            {
+                --tmpCoords._y;
+            }
+        };
+        const uint32_t unitId = cmd.unitId;
+        int i = 0;
+        while (!(tmpCoords._x == cmd.targetX && tmpCoords._y == cmd.targetY))
+        {
+            _doStep();
+            actions.push_back(std::make_unique<MoveAction>(_map, unitId, tmpCoords._x, tmpCoords._y
+                , [this](const int32_t tick, const uint32_t unitId, const uint32_t targetX, const uint32_t targetY)
+            {
+                _eventLog.log(tick, io::UnitMoved{ unitId, targetX, targetY});
+            }));
+        }
+        //end march
+        actions.push_back(std::make_unique<MarchEndAction>([this, unitId, tmpCoords](const int32_t tick)
+        {
+            _eventLog.log(tick, io::MarchEnded{ unitId, tmpCoords._x, tmpCoords._y });
+        }));
+    }
 };
 
 } // namespace sw

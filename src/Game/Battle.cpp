@@ -14,7 +14,7 @@ bool Battle::UnitRegister::empty() const
     return _units_by_time.empty() || _units_by_id.empty();
 }
 
-std::shared_ptr<IUnit> Battle::UnitRegister::find(std::uint32_t id)
+std::shared_ptr<IUnit> Battle::UnitRegister::find(const std::uint32_t id)
 {
     auto it = _units_by_id.find(id);
     if (it == _units_by_id.cend())
@@ -28,11 +28,11 @@ std::shared_ptr<IUnit> Battle::UnitRegister::find(std::uint32_t id)
 void Battle::run()
 {
     uint32_t tick = 1;
-    // create game in the first tick
-    while(!_global_actions.empty())
+    /// to create game in the first tick
+    while(!_startup_actions.empty())
     {
-        _global_actions.front()(tick);
-        _global_actions.pop();
+        _startup_actions.front()(tick);
+        _startup_actions.pop();
     }
 
     if (!_map )
@@ -48,13 +48,14 @@ void Battle::run()
         throw std::runtime_error(std::string("Error: there are no units in the game"));
     }
 
+    /// main game loop
     bool noActionsEcecuted = false;
     while (1)
     {
         noActionsEcecuted = true;
         for(auto i = _units.begin(); i != _units.end(); ++i)
         {
-            if (i->second->execAction(tick))
+            if (i->second->execNextAction(tick))
             {
                 ++tick;
                 noActionsEcecuted = false;
