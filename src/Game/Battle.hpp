@@ -16,7 +16,7 @@
 #include "Units/Warrior.hpp"
 #include "Units/Archer.hpp"
 
-#include "Units/IUnitAction.hpp"
+#include "Units/Actions/MoveAction.hpp"
 
 #include <IO/System/PrintDebug.hpp>
 #include <IO/System/EventLog.hpp>
@@ -50,7 +50,7 @@ class Battle
 
     std::shared_ptr<IMap>   _map;
     UnitRegister            _units;
-    std::queue<std::function<void(uint32_t &)>> _startup_actions; ///< actions to execute when the game starts
+    std::queue<std::function<void(uint32_t &)>> _startup_actions; ///< actions for creating the game
     EventLog                _eventLog;
 
 public:
@@ -69,6 +69,11 @@ public:
             {
                 return;
             }
+            if (_map)
+            {
+                // map is already created
+                return;
+            }
             _map.reset(new RectangleMap(cmd.width, cmd.height));
             _eventLog.log(tick, io::MapCreated{cmd.width, cmd.height});
         });
@@ -82,9 +87,11 @@ public:
             {
                 return;
             }
-            if (_map->spawn(cmd.unitId, cmd.x, cmd.y))
+            std::shared_ptr<IUnit> unit = std::make_shared<Warrior>(cmd.unitId, cmd.hp, cmd.strength);
+            unit->setMap(_map);
+            if (unit->spawn(cmd.x, cmd.y) == ActionResult::success)
             {
-                _units.insert(std::make_shared<Warrior>(cmd.unitId, cmd.hp, cmd.strength));
+                _units.insert(unit);
             }
             _eventLog.log(tick, io::UnitSpawned{cmd.unitId, "Warrior", cmd.x, cmd.y });
         });
@@ -98,9 +105,11 @@ public:
             {
                 return;
             }
-            if (_map->spawn(cmd.unitId, cmd.x, cmd.y))
+            std::shared_ptr<IUnit> unit = std::make_shared<Warrior>(cmd.unitId, cmd.hp, cmd.strength);
+            unit->setMap(_map);
+            if (unit->spawn(cmd.x, cmd.y) == ActionResult::success)
             {
-                _units.insert(std::make_shared<Archer>(cmd.unitId, cmd.hp, cmd.strength, cmd.range, cmd.agility));
+                _units.insert(unit);
             }
             _eventLog.log(tick, io::UnitSpawned{cmd.unitId, "Archer", cmd.x, cmd.y });
         });
@@ -138,12 +147,7 @@ private:
     {
         bool ok = true;
         const PlaneCoordinnates currentCoords = _map->getCoordinnates(cmd.unitId, ok);
-        if (!ok)
-        {
-            return;
-        }
-
-        if (currentCoords._x == cmd.targetX && currentCoords._y == cmd.targetY)
+        if (!ok || (currentCoords._x == cmd.targetX && currentCoords._y == cmd.targetY))
         {
             return;
         }
@@ -180,21 +184,20 @@ private:
                 --tmpCoords._y;
             }
         };
-        const uint32_t unitId = cmd.unitId;
-        int i = 0;
+        auto unit = _units.find(cmd.unitId);
         while (!(tmpCoords._x == cmd.targetX && tmpCoords._y == cmd.targetY))
         {
             _doStep();
-            actions.push_back(std::make_unique<MoveAction>(_map, unitId, tmpCoords._x, tmpCoords._y
+            actions.push_back(std::make_unique<MoveAction>(unit, tmpCoords._x, tmpCoords._y
                 , [this](const int32_t tick, const uint32_t unitId, const uint32_t targetX, const uint32_t targetY)
             {
                 _eventLog.log(tick, io::UnitMoved{ unitId, targetX, targetY});
             }));
         }
         //end march
-        actions.push_back(std::make_unique<MarchEndAction>([this, unitId, tmpCoords](const int32_t tick)
+        actions.push_back(std::make_unique<MarchEndAction>([this, cmd, tmpCoords](const int32_t tick)
         {
-            _eventLog.log(tick, io::MarchEnded{ unitId, tmpCoords._x, tmpCoords._y });
+            _eventLog.log(tick, io::MarchEnded{ cmd.unitId, tmpCoords._x, tmpCoords._y });
         }));
     }
 };

@@ -30,7 +30,7 @@ bool RectangleMap::move(const std::uint32_t unitId, const std::uint32_t targetX,
 {
     if (!isVacant(targetX, targetY))
     {
-        return false;
+        return false;/// @todo impossible
     }
     auto it = _coords.find(unitId);
     if (it == _coords.end())
@@ -50,7 +50,6 @@ bool RectangleMap::isVacant(const std::uint32_t x, const std::uint32_t y) const
 {
     if (x > _model.size() - 1 || (_model.size() && y > _model[0].size() - 1))
     {
-        //throw std::invalid_argument(std::string("Error: map doesn't contain the point [") + std::to_string(x) + ';' + std::to_string(y) +']');
         return false;
     }
     return _model[x][y] == 0;
@@ -66,6 +65,34 @@ PlaneCoordinnates RectangleMap::getCoordinnates(const std::uint32_t unitId, bool
     }
     ok = true;
     return it->second;
+}
+
+void RectangleMap::csanRadius(const uint32_t unitId, const uint32_t r, std::vector<uint32_t> &units) const
+{
+    bool ok = false;
+    auto unitPoint = getCoordinnates(unitId, ok);
+    if (!ok)
+    {
+        return;
+    }
+
+    for (int x = unitPoint._x - r; x < unitPoint._x + r; ++x)
+    {   if (x < 0 || x > _model.size() - 1)
+        {
+            continue;
+        }
+        for (int y = unitPoint._y - r ; y < unitPoint._y + r; ++y)
+        {
+            if (y < 0 || y > _model[0].size() - 1)
+            {
+                continue;
+            }
+            if (!isVacant(x, y) && (x != unitPoint._x || y != unitPoint._y))
+            {
+                units.push_back(_model[x][y]);
+            }
+        }
+    }
 }
 
 } // namespace sw

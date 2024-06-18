@@ -27,6 +27,7 @@ protected:
 private:
     bool isVacant(const std::uint32_t x, const std::uint32_t y) const override;
     PlaneCoordinnates getCoordinnates(const std::uint32_t unitId, bool &ok) const override;
+    void csanRadius(const uint32_t unitId, const uint32_t r, std::vector<uint32_t> &units) const override;
 };
 
 } // namespace sw

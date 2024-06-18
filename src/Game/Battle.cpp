@@ -49,22 +49,17 @@ void Battle::run()
     }
 
     /// main game loop
-    bool noActionsEcecuted = false;
-    while (1)
+    bool noActionsExecuted = false;
+    while (!noActionsExecuted)
     {
-        noActionsEcecuted = true;
+        noActionsExecuted = true;
         for(auto i = _units.begin(); i != _units.end(); ++i)
         {
             if (i->second->execNextAction(tick))
             {
                 ++tick;
-                noActionsEcecuted = false;
-                /// @todo do event log here
+                noActionsExecuted = false;
             }
-        }
-        if (noActionsEcecuted)
-        {
-            break;
         }
     }
 }
