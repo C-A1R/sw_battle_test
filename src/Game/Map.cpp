@@ -24,7 +24,7 @@ bool Map::spawn(const std::uint32_t unitId, const std::uint32_t x, const std::ui
         return false;
     }
     _model[x][y] = unitId;
-    _coords.emplace(unitId, PlaneCoordinnates{x, y});
+    _coords.emplace(unitId, Point{x, y});
     return true;
 }
 
@@ -40,10 +40,10 @@ bool Map::move(const std::uint32_t unitId, const std::uint32_t targetX, const st
         return false;
     }
 
-    PlaneCoordinnates &curr = it->second;
-    _model[curr._x][curr._y] = 0;
-    curr._x = targetX;
-    curr._y = targetY;
+    Point &curr = it->second;
+    _model[curr.x][curr.y] = 0;
+    curr.x = targetX;
+    curr.y = targetY;
     _model[targetX][targetY] = unitId;
     return true;
 }
@@ -57,13 +57,13 @@ bool Map::isVacant(const std::uint32_t x, const std::uint32_t y) const
     return _model[x][y] == 0;
 }
 
-PlaneCoordinnates Map::getCoordinnates(const std::uint32_t unitId, bool &ok) const
+Point Map::getPoint(const std::uint32_t unitId, bool &ok) const
 {
     auto it = _coords.find(unitId);
     if (it == _coords.end())
     {
         ok = false;
-        return PlaneCoordinnates();
+        return Point();
     }
     ok = true;
     return it->second;
@@ -72,24 +72,24 @@ PlaneCoordinnates Map::getCoordinnates(const std::uint32_t unitId, bool &ok) con
 void Map::scanAround(const uint32_t unitId, const uint32_t r, std::vector<std::shared_ptr<IUnit>> &units) const
 {
     bool ok = false;
-    auto unitPoint = getCoordinnates(unitId, ok);
+    auto unitPoint = getPoint(unitId, ok);
     if (!ok)
     {
         return;
     }
 
-    for (int x = unitPoint._x - r; x <= unitPoint._x + r; ++x)
+    for (int x = unitPoint.x - r; x <= unitPoint.x + r; ++x)
     {   if (x < 0 || x > _model.size() - 1)
         {
             continue;
         }
-        for (int y = unitPoint._y - r ; y <= unitPoint._y + r; ++y)
+        for (int y = unitPoint.y - r ; y <= unitPoint.y + r; ++y)
         {
             if (y < 0 || y > _model[0].size() - 1)
             {
                 continue;
             }
-            if (!isVacant(x, y) && (x != unitPoint._x || y != unitPoint._y))
+            if (!isVacant(x, y) && (x != unitPoint.x || y != unitPoint.y))
             {
                 auto unit = _units->find(_model[x][y]); 
                 if (unit)
@@ -109,7 +109,7 @@ bool Map::kill(const std::uint32_t unitId)
     {
         return false;
     }
-    _model[it->second._x][it->second._y] = 0;
+    _model[it->second.x][it->second.y] = 0;
     _coords.erase(it);
     return true;
 }

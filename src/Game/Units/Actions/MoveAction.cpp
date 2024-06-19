@@ -26,12 +26,12 @@ MarchStartAction::MarchStartAction(const std::shared_ptr<EventLog> &eventLog
 bool MarchStartAction::exec(const int32_t tick) 
 {
     bool ok = false;
-    auto unitPoint = _map->getCoordinnates(_unitId, ok);
+    auto unitPoint = _map->getPoint(_unitId, ok);
     if (!ok)
     {
         return false;
     }
-    _eventLog->log(tick, io::MarchStarted{ _unitId, unitPoint._x, unitPoint._y, _targetX, _targetY });
+    _eventLog->log(tick, io::MarchStarted{ _unitId, unitPoint.x, unitPoint.y, _targetX, _targetY });
     return true;
 }
 
@@ -91,12 +91,12 @@ MarchEndAction::MarchEndAction(const std::shared_ptr<EventLog> &eventLog
 bool MarchEndAction::exec(const int32_t tick)
 {
     bool ok = false;
-    auto unitPoint = _map->getCoordinnates(_unitId, ok);
+    auto unitPoint = _map->getPoint(_unitId, ok);
     if (!ok)
     {
         return false;
     }
-    _eventLog->log(tick, io::MarchEnded{ _unitId, unitPoint._x, unitPoint._y });
+    _eventLog->log(tick, io::MarchEnded{ _unitId, unitPoint.x, unitPoint.y });
     return true;
 }
 

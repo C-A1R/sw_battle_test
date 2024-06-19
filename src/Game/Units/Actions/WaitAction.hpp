@@ -14,9 +14,6 @@ protected:
     {
         return true;
     }
-    void addAction(const std::shared_ptr<IUnitAction> &/*act*/) final
-    {
-    }
 };
 
 } // namespace sw

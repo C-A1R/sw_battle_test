@@ -1,8 +1,6 @@
 #pragma once
 
 #include <memory>
-#include <map>
-#include <unordered_map>
 #include <queue>
 #include <functional>
 
@@ -141,57 +139,45 @@ private:
     void splitMarch(io::March &&cmd, std::vector<std::shared_ptr<IUnitAction>> &actions)
     {
         bool ok = true;
-        const PlaneCoordinnates currentCoords = _map->getCoordinnates(cmd.unitId, ok);
-        if (!ok || (currentCoords._x == cmd.targetX && currentCoords._y == cmd.targetY))
+        const Point currentPoint = _map->getPoint(cmd.unitId, ok);
+        if (!ok || (currentPoint.x == cmd.targetX && currentPoint.y == cmd.targetY))
         {
             return;
         }
 
         /// the longest march length
-        uint32_t marchLen = std::max(currentCoords._x, cmd.targetX) - std::min(currentCoords._x, cmd.targetX)
-                            + std::max(currentCoords._y, cmd.targetY) - std::min(currentCoords._y, cmd.targetY);
+        uint32_t marchLen = std::max(currentPoint.x, cmd.targetX) - std::min(currentPoint.x, cmd.targetX)
+                          + std::max(currentPoint.y, cmd.targetY) - std::min(currentPoint.y, cmd.targetY);
         actions.reserve(marchLen + 2);
         //start march
         actions.emplace_back(std::make_shared<MarchStartAction>(_eventLog, _map, cmd.unitId, cmd.targetX, cmd.targetY));
-        PlaneCoordinnates tmpCoords = currentCoords;
+        Point tmpPoint = currentPoint;
         //move
-        auto _doStep = [&tmpCoords, &cmd]()
+        auto _doStep = [&tmpPoint, &cmd]()
         {
-            if (tmpCoords._x < cmd.targetX)
+            if (tmpPoint.x < cmd.targetX)
             {
-                ++tmpCoords._x;
+                ++tmpPoint.x;
             }
-            else if (tmpCoords._x > cmd.targetX)
+            else if (tmpPoint.x > cmd.targetX)
             {
-                --tmpCoords._x;
+                --tmpPoint.x;
             }
             
-            if (tmpCoords._y < cmd.targetY)
+            if (tmpPoint.y < cmd.targetY)
             {
-                ++tmpCoords._y;
+                ++tmpPoint.y;
             }
-            else if (tmpCoords._y > cmd.targetY)
+            else if (tmpPoint.y > cmd.targetY)
             {
-                --tmpCoords._y;
+                --tmpPoint.y;
             }
         };
         auto unit = _units->find(cmd.unitId);
-        while (!(tmpCoords._x == cmd.targetX && tmpCoords._y == cmd.targetY))
+        while (!(tmpPoint.x == cmd.targetX && tmpPoint.y == cmd.targetY))
         {
-            std::shared_ptr<IUnitAction> multiAct = std::make_shared<MultiAction>();
-            // multiAct->addAction(std::make_unique<CheckHpAction>(unit->getId(), [this](const int32_t tick, const uint32_t unitId)
-            // {
-            //     auto unit = _units->find(unitId);
-            //     if (unit->getHp() < 0)
-            //     {
-            //         _map->kill(unitId);
-            //         _units->remove(unitId);
-            //         _eventLog->log(tick, io::UnitDied{unitId});
-            //     }
-            // }));
             _doStep();
-            multiAct->addAction(std::make_shared<MoveAction>(_eventLog, _map, cmd.unitId, tmpCoords._x, tmpCoords._y));
-            actions.emplace_back(std::move(multiAct));
+            actions.emplace_back(std::make_shared<MoveAction>(_eventLog, _map, cmd.unitId, tmpPoint.x, tmpPoint.y));
         }
         //end march
         actions.emplace_back(std::make_shared<MarchEndAction>(_eventLog, _map, cmd.unitId));

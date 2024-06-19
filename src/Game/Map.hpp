@@ -11,17 +11,17 @@ namespace sw
 class IUnit;
 class UnitRegister;
 
-struct PlaneCoordinnates 
+struct Point 
 {
-    uint32_t _x {0};
-    uint32_t _y {0};
+    uint32_t x {0};
+    uint32_t y {0};
 };
 
 /// @brief Rectangle gameboard
 class Map
 {
     std::vector<std::vector<uint32_t>> _model; ///< first vector is for x indices, second is for y indices; second contains unit ids (default 0)
-    std::unordered_map<uint32_t, PlaneCoordinnates> _coords;
+    std::unordered_map<uint32_t, Point> _coords;
     std::shared_ptr<const UnitRegister> _units;
 
 public:
@@ -45,7 +45,7 @@ public:
     /// @brief Remove any unit
     bool kill(const std::uint32_t unitId);
 
-    PlaneCoordinnates getCoordinnates(const std::uint32_t unitId, bool &ok) const;
+    Point getPoint(const std::uint32_t unitId, bool &ok) const;
     std::shared_ptr<IUnit> getUnit(const std::uint32_t unitId) const;
 };
 
