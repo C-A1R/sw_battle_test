@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 file(GLOB_RECURSE SOURCES 
     src/*.cpp 
     src/*.hpp
-    src/Maps/*.cpp
+    src/Units/Actions*.cpp
 )
 add_executable(sw_battle_test ${SOURCES})
 

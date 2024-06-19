@@ -1,29 +1,9 @@
 #include "Battle.hpp"
 
+#include <IO/Events/UnitDied.hpp>
+
 namespace sw
 {
-
-void Battle::UnitRegister::insert(const std::shared_ptr<IUnit> &unit)
-{
-    _units_by_time.emplace(++_count, unit);
-    _units_by_id.emplace(unit->id(), unit);
-}
-
-bool Battle::UnitRegister::empty() const
-{
-    return _units_by_time.empty() || _units_by_id.empty();
-}
-
-std::shared_ptr<IUnit> Battle::UnitRegister::find(const std::uint32_t id)
-{
-    auto it = _units_by_id.find(id);
-    if (it == _units_by_id.cend())
-    {
-        return nullptr;
-    }
-    return it->second;
-}
-
 
 void Battle::run()
 {
@@ -43,7 +23,7 @@ void Battle::run()
     {
         throw std::runtime_error(std::string("Error: game map is invalid"));
     }
-    if (_units.empty())
+    if (_units->empty())
     {
         throw std::runtime_error(std::string("Error: there are no units in the game"));
     }
@@ -53,13 +33,20 @@ void Battle::run()
     while (!noActionsExecuted)
     {
         noActionsExecuted = true;
-        for(auto i = _units.begin(); i != _units.end(); ++i)
+        for(auto i = _units->begin(); i != _units->end(); ++i)
         {
-            if (i->second->execNextAction(tick))
+            auto &unit = i->second;
+            if (!unit->getHp())
             {
-                ++tick;
-                noActionsExecuted = false;
+                _map->kill(unit->getId());
+                _units->remove(unit->getId());
+                _eventLog->log(tick, io::UnitDied{unit->getId()});
             }
+            if (!unit->hasNextAction())
+                continue;
+            unit->execNextAction(tick);
+            ++tick;
+            noActionsExecuted = false;
         }
     }
 }

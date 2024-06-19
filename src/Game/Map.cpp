@@ -1,21 +1,23 @@
-#include "RectangleMap.hpp"
+#include "Map.hpp"
 
-#include <stdexcept>
+
+#include "UnitRegister.hpp"
 
 namespace sw
 {
 
-RectangleMap::RectangleMap(const uint32_t width, const uint32_t height)
-    : _model(height, std::vector<uint32_t>(width, 0))
+Map::Map(const std::shared_ptr<const UnitRegister> &units, const uint32_t width, const uint32_t height)
+    : _units{units}
+    , _model(height, std::vector<uint32_t>(width, 0))
 {
 }
 
-bool RectangleMap::isValid() const
+bool Map::isValid() const
 {
     return _model.size() && _model[0].size();
 }
 
-bool RectangleMap::spawn(const std::uint32_t unitId, const std::uint32_t x, const std::uint32_t y)
+bool Map::spawn(const std::uint32_t unitId, const std::uint32_t x, const std::uint32_t y)
 {
     if (!isVacant(x, y))
     {
@@ -26,7 +28,7 @@ bool RectangleMap::spawn(const std::uint32_t unitId, const std::uint32_t x, cons
     return true;
 }
 
-bool RectangleMap::move(const std::uint32_t unitId, const std::uint32_t targetX, const std::uint32_t targetY)
+bool Map::move(const std::uint32_t unitId, const std::uint32_t targetX, const std::uint32_t targetY)
 {
     if (!isVacant(targetX, targetY))
     {
@@ -46,7 +48,7 @@ bool RectangleMap::move(const std::uint32_t unitId, const std::uint32_t targetX,
     return true;
 }
 
-bool RectangleMap::isVacant(const std::uint32_t x, const std::uint32_t y) const
+bool Map::isVacant(const std::uint32_t x, const std::uint32_t y) const
 {
     if (x > _model.size() - 1 || (_model.size() && y > _model[0].size() - 1))
     {
@@ -55,7 +57,7 @@ bool RectangleMap::isVacant(const std::uint32_t x, const std::uint32_t y) const
     return _model[x][y] == 0;
 }
 
-PlaneCoordinnates RectangleMap::getCoordinnates(const std::uint32_t unitId, bool &ok) const
+PlaneCoordinnates Map::getCoordinnates(const std::uint32_t unitId, bool &ok) const
 {
     auto it = _coords.find(unitId);
     if (it == _coords.end())
@@ -67,7 +69,7 @@ PlaneCoordinnates RectangleMap::getCoordinnates(const std::uint32_t unitId, bool
     return it->second;
 }
 
-void RectangleMap::csanRadius(const uint32_t unitId, const uint32_t r, std::vector<uint32_t> &units) const
+void Map::scanAround(const uint32_t unitId, const uint32_t r, std::vector<std::shared_ptr<IUnit>> &units) const
 {
     bool ok = false;
     auto unitPoint = getCoordinnates(unitId, ok);
@@ -76,12 +78,12 @@ void RectangleMap::csanRadius(const uint32_t unitId, const uint32_t r, std::vect
         return;
     }
 
-    for (int x = unitPoint._x - r; x < unitPoint._x + r; ++x)
+    for (int x = unitPoint._x - r; x <= unitPoint._x + r; ++x)
     {   if (x < 0 || x > _model.size() - 1)
         {
             continue;
         }
-        for (int y = unitPoint._y - r ; y < unitPoint._y + r; ++y)
+        for (int y = unitPoint._y - r ; y <= unitPoint._y + r; ++y)
         {
             if (y < 0 || y > _model[0].size() - 1)
             {
@@ -89,10 +91,32 @@ void RectangleMap::csanRadius(const uint32_t unitId, const uint32_t r, std::vect
             }
             if (!isVacant(x, y) && (x != unitPoint._x || y != unitPoint._y))
             {
-                units.push_back(_model[x][y]);
+                auto unit = _units->find(_model[x][y]); 
+                if (unit)
+                {
+                    units.push_back(unit);
+                }
             }
         }
     }
+
+}
+
+bool Map::kill(const std::uint32_t unitId)
+{
+    auto it = _coords.find(unitId);
+    if (it == _coords.end())
+    {
+        return false;
+    }
+    _model[it->second._x][it->second._y] = 0;
+    _coords.erase(it);
+    return true;
+}
+
+std::shared_ptr<IUnit> Map::getUnit(const std::uint32_t unitId) const
+{
+    return _units->find(unitId);
 }
 
 } // namespace sw

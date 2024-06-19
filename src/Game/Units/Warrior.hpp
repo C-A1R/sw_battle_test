@@ -1,6 +1,9 @@
 #pragma once
 
+#include <algorithm>
+
 #include "IUnit.hpp"
+#include "../Map.hpp"
 
 namespace sw
 {
@@ -19,31 +22,66 @@ public:
     ~Warrior() override = default;
 
 protected:
-    ActionResult move(const uint32_t targetX, const uint32_t targetY) override
+    bool findAndAtack(std::shared_ptr<Map> map, std::function<void(const uint32_t, const uint32_t, const uint32_t)> &&callback) const override
     {
-        std::vector<uint32_t> enemies;
-        _map->csanRadius(id(), atackRadius, enemies);
+        std::vector<std::shared_ptr<IUnit>> enemies;
+        map->scanAround(getId(), atackRadius, enemies);
         if (enemies.empty())
         {
-            return Unit::move(targetX, targetY);
+            return false;
         }
-        return meleeAtack(enemies);
+        return meleeAtack(enemies, std::move(callback));
     }
 
-    virtual ActionResult meleeAtack(const std::vector<uint32_t> &enemies)
+    bool meleeAtack(const std::vector<std::shared_ptr<IUnit>> &enemies, std::function<void(const uint32_t, const uint32_t, const uint32_t)> &&callback) const
     {
         if (enemies.empty())
         {
-            return ActionResult::fail;
+            return false;
         }
+
+        std::shared_ptr<IUnit> target;
         if (enemies.size() == 1)
         {
-            uint32_t atackedEnemy = enemies[0];
+            target = enemies[0];
+        }
+        else
+        {
+            auto minHpIter = std::min_element(enemies.cbegin(), enemies.cend(), [](const std::shared_ptr<IUnit> &l, const std::shared_ptr<IUnit> &r)
+            {   
+                return l->getHp() < r->getHp();
+            });
+            std::vector<std::shared_ptr<IUnit>> min_hp_units;
+            std::copy_if(enemies.cbegin(), enemies.cend(), std::back_inserter(min_hp_units), [&minHpIter](const std::shared_ptr<IUnit> &unit)
+            {
+                return unit->getHp() == (*minHpIter)->getHp();
+            });
+            if (min_hp_units.empty())
+            {
+                return false;
+            }
+
+            if (min_hp_units.size() == 1)
+            {
+                target = min_hp_units[0];
+            }
+            else
+            {
+                std::sort(min_hp_units.begin(), min_hp_units.end(), [](const std::shared_ptr<IUnit> &l, const std::shared_ptr<IUnit> &r)
+                {
+                    return l->getId() < r->getId();
+                });
+                target = min_hp_units[0];
+            }
         }
 
-
-
-        return ActionResult::success;
+        if (!target)
+        {
+            return false;
+        }
+        target->damage(_strength);
+        callback(target->getId(), _strength, target->getHp());
+        return true;
     }
 };
 
