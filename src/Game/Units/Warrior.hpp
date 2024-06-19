@@ -45,7 +45,7 @@ protected:
         {
             return false;
         }
-        target->damage(_strength);
+        uint32_t harm = target->damage(_strength);
         t = std::make_tuple(target->getId(), _strength, target->getHp());
         return true;
     }
@@ -63,8 +63,8 @@ protected:
         }
         
         auto minHpIter = std::min_element(enemies.cbegin(), enemies.cend(), [](const std::shared_ptr<IUnit> &l, const std::shared_ptr<IUnit> &r)
-        {   
-            return (l->getHp() < r->getHp()) && l->getHp() > 0;
+        {
+            return l->getHp() < r->getHp();
         });
         std::vector<std::shared_ptr<IUnit>> min_hp_units;
         std::copy_if(enemies.cbegin(), enemies.cend(), std::back_inserter(min_hp_units), [&minHpIter](const std::shared_ptr<IUnit> &unit)

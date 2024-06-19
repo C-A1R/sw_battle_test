@@ -1,6 +1,7 @@
 #include "Map.hpp"
 
 #include "UnitRegister.hpp"
+#include "Units/IUnit.hpp"
 
 namespace sw
 {
@@ -82,26 +83,30 @@ void Map::scanAround(const uint32_t unitId, const uint32_t radiusBegin, const ui
         return;
     }
 
-    for (int x = unitPoint.x - range; x <= unitPoint.x + range; ++x)
+    const int ux = unitPoint.x;
+    const int uy = unitPoint.y;
+    const int _x = ux + range;
+    const int _y = uy + range;
+    for (int x = ux - range; x <= _x; ++x)
     {   
         if (x < 0 || x > _model.size() - 1)
             continue;
 
-        for (int y = unitPoint.y - range; y <= unitPoint.y + range; ++y)
+        for (int y = uy - range; y <= _y; ++y)
         {
             if (y < 0 || y > _model[0].size() - 1)
                 continue;
 
-            if (x > unitPoint.x - radiusBegin && x < unitPoint.x + radiusBegin
-                && y > unitPoint.y - radiusBegin && y < unitPoint.y + radiusBegin)
+            if (x > ux - radiusBegin && x < ux + radiusBegin
+                && y > uy - radiusBegin && y < uy + radiusBegin)
             {
                 continue;
             }
 
-            if (!isVacant(x, y))
+            if (!isVacant(x, y) && (x != ux || y != uy))
             {
                 auto unit = _units->find(_model[x][y]); 
-                if (unit)
+                if (unit && unit->getHp() > 0)
                 {
                     units.push_back(unit);
                 }

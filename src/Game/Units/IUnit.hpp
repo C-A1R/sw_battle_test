@@ -29,7 +29,7 @@ public:
     virtual bool execNextAction(const int32_t tick) = 0;
 
     virtual bool findAndAtack(const std::shared_ptr<Map> &map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const = 0;
-    virtual void damage(const uint32_t points) = 0;
+    virtual uint32_t damage(const uint32_t points) = 0;
 };
 
 /// @brief  Unit base class
@@ -73,9 +73,18 @@ protected:
         return true;
     }
 
-    void damage(const uint32_t points) override
+    uint32_t damage(uint32_t points) override
     {
-        points > _hp ? _hp = 0 : _hp -= points;
+        if (points > _hp)
+        {
+            points = _hp;
+            _hp = 0;
+        }
+        else
+        {
+            _hp -= points;
+        }
+        return points;
     }
 };
 

@@ -44,8 +44,8 @@ protected:
         {
             return false;
         }
-        target->damage(_agility);
-        t = std::make_tuple(target->getId(), _agility, target->getHp());
+        uint32_t harm = target->damage(_agility);
+        t = std::make_tuple(target->getId(), harm, target->getHp());
         return true;
     }
 

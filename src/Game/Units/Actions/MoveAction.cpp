@@ -60,10 +60,10 @@ ActionResult MoveAction::exec(const int32_t tick)
     if (unit->findAndAtack(_map, t))
     {
         uint32_t tId {0};
-        uint32_t d {0};
+        uint32_t dam {0};
         uint32_t tHp {0};
-        std::tie(tId, d, tHp) = t;
-        _eventLog->log(tick, io::UnitAttacked{_unitId, tId, d, tHp});
+        std::tie(tId, dam, tHp) = t;
+        _eventLog->log(tick, io::UnitAttacked{_unitId, tId, dam, tHp});
         return ActionResult::skip;
     }
 
