@@ -89,7 +89,7 @@ public:
             {
                 return;
             }
-            std::shared_ptr<IUnit> unit = std::make_shared<Warrior>(cmd.unitId, cmd.hp, cmd.strength);
+            std::shared_ptr<IUnit> unit = std::make_shared<Archer>(cmd.unitId, cmd.hp, cmd.strength, cmd.range, cmd.agility);
             if (_map->spawn(cmd.unitId, cmd.x, cmd.y))
             {
                 _units->insert(unit);
@@ -136,58 +136,7 @@ public:
 
 private:
     /// @brief separate march to several moves
-    void splitMarch(io::March &&cmd, std::vector<std::shared_ptr<IUnitAction>> &actions)
-    {
-        bool ok = true;
-        const Point currentPoint = _map->getPoint(cmd.unitId, ok);
-        if (!ok || (currentPoint.x == cmd.targetX && currentPoint.y == cmd.targetY))
-        {
-            return;
-        }
-
-        /// the longest march length
-        uint32_t marchLen = std::max(currentPoint.x, cmd.targetX) - std::min(currentPoint.x, cmd.targetX)
-                          + std::max(currentPoint.y, cmd.targetY) - std::min(currentPoint.y, cmd.targetY);
-        actions.reserve(marchLen + 2);
-        //start march
-        actions.emplace_back(std::make_shared<MarchStartAction>(_eventLog, _map, cmd.unitId, cmd.targetX, cmd.targetY));
-        Point tmpPoint = currentPoint;
-        //move
-        auto _doStep = [&tmpPoint, &cmd]()
-        {
-            if (tmpPoint.x < cmd.targetX)
-            {
-                ++tmpPoint.x;
-            }
-            else if (tmpPoint.x > cmd.targetX)
-            {
-                --tmpPoint.x;
-            }
-            
-            if (tmpPoint.y < cmd.targetY)
-            {
-                ++tmpPoint.y;
-            }
-            else if (tmpPoint.y > cmd.targetY)
-            {
-                --tmpPoint.y;
-            }
-        };
-        auto unit = _units->find(cmd.unitId);
-        while (!(tmpPoint.x == cmd.targetX && tmpPoint.y == cmd.targetY))
-        {
-            _doStep();
-            actions.emplace_back(std::make_shared<MoveAction>(_eventLog, _map, cmd.unitId, tmpPoint.x, tmpPoint.y));
-        }
-        //end march
-        actions.emplace_back(std::make_shared<MarchEndAction>(_eventLog, _map, cmd.unitId));
-    }
-
-    template<typename T>
-    T callback(T &&event)
-    {
-        return event;
-    }
+    void splitMarch(io::March &&cmd, std::vector<std::shared_ptr<IUnitAction>> &actions);
 };
 
 } // namespace sw

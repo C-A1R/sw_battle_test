@@ -28,7 +28,7 @@ public:
     virtual bool hasNextAction() const = 0;
     virtual bool execNextAction(const int32_t tick) = 0;
 
-    virtual bool findAndAtack(std::shared_ptr<Map> map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const = 0;
+    virtual bool findAndAtack(const std::shared_ptr<Map> &map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const = 0;
     virtual void damage(const uint32_t points) = 0;
 };
 

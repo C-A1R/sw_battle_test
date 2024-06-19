@@ -1,6 +1,5 @@
 #include "Map.hpp"
 
-
 #include "UnitRegister.hpp"
 
 namespace sw
@@ -57,6 +56,11 @@ bool Map::isVacant(const std::uint32_t x, const std::uint32_t y) const
     return _model[x][y] == 0;
 }
 
+Point Map::getPoint(const std::uint32_t unitId) const
+{
+    return _coords.find(unitId)->second;
+}
+
 Point Map::getPoint(const std::uint32_t unitId, bool &ok) const
 {
     auto it = _coords.find(unitId);
@@ -69,7 +73,7 @@ Point Map::getPoint(const std::uint32_t unitId, bool &ok) const
     return it->second;
 }
 
-void Map::scanAround(const uint32_t unitId, const uint32_t r, std::vector<std::shared_ptr<IUnit>> &units) const
+void Map::scanAround(const uint32_t unitId, const uint32_t radiusBegin, const uint32_t range, std::vector<std::shared_ptr<IUnit>> &units) const
 {
     bool ok = false;
     auto unitPoint = getPoint(unitId, ok);
@@ -78,18 +82,23 @@ void Map::scanAround(const uint32_t unitId, const uint32_t r, std::vector<std::s
         return;
     }
 
-    for (int x = unitPoint.x - r; x <= unitPoint.x + r; ++x)
-    {   if (x < 0 || x > _model.size() - 1)
-        {
+    for (int x = unitPoint.x - range; x <= unitPoint.x + range; ++x)
+    {   
+        if (x < 0 || x > _model.size() - 1)
             continue;
-        }
-        for (int y = unitPoint.y - r ; y <= unitPoint.y + r; ++y)
+
+        for (int y = unitPoint.y - range; y <= unitPoint.y + range; ++y)
         {
             if (y < 0 || y > _model[0].size() - 1)
+                continue;
+
+            if (x > unitPoint.x - radiusBegin && x < unitPoint.x + radiusBegin
+                && y > unitPoint.y - radiusBegin && y < unitPoint.y + radiusBegin)
             {
                 continue;
             }
-            if (!isVacant(x, y) && (x != unitPoint.x || y != unitPoint.y))
+
+            if (!isVacant(x, y))
             {
                 auto unit = _units->find(_model[x][y]); 
                 if (unit)
@@ -99,7 +108,6 @@ void Map::scanAround(const uint32_t unitId, const uint32_t r, std::vector<std::s
             }
         }
     }
-
 }
 
 bool Map::kill(const std::uint32_t unitId)

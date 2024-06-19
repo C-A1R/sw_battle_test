@@ -7,8 +7,10 @@ namespace sw
 
 class Archer : public Warrior
 {
+    static const uint8_t _minShotDistance {2};
     uint32_t _range {0};
     uint32_t _agility {0};
+
 public:
     Archer(const uint32_t id, const uint32_t hp, const uint32_t strength, const uint32_t range, const uint32_t agility)
         : Warrior(id, hp, strength)
@@ -17,6 +19,92 @@ public:
     {
     }
     ~Archer() override = default;
+
+protected:
+    bool findAndAtack(const std::shared_ptr<Map> &map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const override
+    {
+        std::vector<std::shared_ptr<IUnit>> enemies;
+        map->scanAround(getId(), _minShotDistance, _range, enemies);
+        if (enemies.empty())
+        {
+            return Warrior::findAndAtack(map, t);
+        }
+        return rangeAtack(map, enemies, t);
+    }
+
+    bool rangeAtack(const std::shared_ptr<Map> &map, const std::vector<std::shared_ptr<IUnit>> &enemies, std::tuple<uint32_t, uint32_t, uint32_t> &t) const
+    {
+        if (enemies.empty() || !map)
+        {
+            return false;
+        }
+
+        std::shared_ptr<IUnit> target = chooseTarget(map, enemies);
+        if (!target)
+        {
+            return false;
+        }
+        target->damage(_agility);
+        t = std::make_tuple(target->getId(), _agility, target->getHp());
+        return true;
+    }
+
+    std::shared_ptr<IUnit> chooseTarget(const std::shared_ptr<Map> &map, const std::vector<std::shared_ptr<IUnit>> &enemies) const
+    {
+        if (enemies.empty() || !map)
+        {
+            return nullptr;
+        }
+
+        if (enemies.size() == 1)
+        {
+            return enemies[0];
+        }
+
+        uint32_t distance = 0;
+        bool ok = false;
+        auto myPoint = map->getPoint(getId(), ok);
+        if (!ok)
+        {
+            return nullptr;
+        }
+
+        double minDist = std::numeric_limits<double>::max();
+        std::unordered_map<uint32_t, double> distancesToThis;
+        for (const auto &e : enemies)
+        {
+            bool ok = false;
+            const Point &ePoint = map->getPoint(e->getId(), ok);
+            if (!ok)
+            {
+                continue;
+            }
+            
+            const double dist = Point::distance(ePoint, myPoint);
+            distancesToThis.emplace(e->getId(), dist);
+            if (dist < minDist)
+            {
+                minDist = dist;
+            }
+        }
+        if (distancesToThis.empty())
+        {
+            return nullptr;
+        }
+
+        std::vector<std::shared_ptr<IUnit>> nearestUnits;
+        std::copy_if(enemies.cbegin(), enemies.cend(), std::back_inserter(nearestUnits), [minDist, &distancesToThis](const std::shared_ptr<IUnit> &unit)
+        {
+            return distancesToThis.at(unit->getId()) == minDist;
+        });
+
+        if (nearestUnits.size() == 1)
+        {
+            return nearestUnits[0];
+        }
+
+        return Warrior::chooseTarget(nearestUnits);
+    }
 };
 
 } // namespace sw

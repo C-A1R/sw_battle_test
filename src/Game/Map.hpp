@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 #include <unordered_map>
+#include <cmath>
 
 namespace sw
 {
@@ -15,7 +16,12 @@ struct Point
 {
     uint32_t x {0};
     uint32_t y {0};
-};
+    static double distance(const Point &l, const Point &r)
+    {
+        return std::sqrt(std::pow(std::max(l.x, r.x) - std::min(l.x, r.x), 2) 
+                        + std::pow(std::max(l.y, r.y) - std::min(l.y, r.y), 2));
+    }
+}; 
 
 /// @brief Rectangle gameboard
 class Map
@@ -39,12 +45,13 @@ public:
     /// @brief To check that point is avaliable to move or spawn
     bool isVacant(const std::uint32_t x, const std::uint32_t y) const;
 
-    /// @brief Find units around unit with unitId in the radius
-    void scanAround(const uint32_t unitId, const uint32_t r, std::vector<std::shared_ptr<IUnit>> &units) const;
+    /// @brief Find units around unit with unitId 
+    void scanAround(const uint32_t unitId, const uint32_t radiusBegin, const uint32_t radiusEnd, std::vector<std::shared_ptr<IUnit>> &units) const;
 
     /// @brief Remove any unit
     bool kill(const std::uint32_t unitId);
 
+    Point getPoint(const std::uint32_t unitId) const;
     Point getPoint(const std::uint32_t unitId, bool &ok) const;
     std::shared_ptr<IUnit> getUnit(const std::uint32_t unitId) const;
 };
