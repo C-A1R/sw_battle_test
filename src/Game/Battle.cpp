@@ -30,6 +30,7 @@ void Battle::run()
 
     /// main game loop
     bool noActionsExecuted = false;
+    std::vector<uint32_t> toRemove;
     while (!noActionsExecuted)
     {
         noActionsExecuted = true;
@@ -38,16 +39,24 @@ void Battle::run()
             auto &unit = i->second;
             if (!unit->getHp())
             {
-                _map->kill(unit->getId());
-                _units->remove(unit->getId());
+                toRemove.push_back(unit->getId());
                 _eventLog->log(tick, io::UnitDied{unit->getId()});
+                continue;
             }
+
             if (!unit->hasNextAction())
                 continue;
-            unit->execNextAction(tick);
-            ++tick;
+
+            unit->execNextAction(tick++);
             noActionsExecuted = false;
         }
+
+        for (const uint32_t id : toRemove)
+        {
+            _map->kill(id);
+            _units->remove(id);
+        }
+        toRemove.clear();
     }
 }
 

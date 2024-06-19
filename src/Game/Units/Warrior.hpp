@@ -22,7 +22,7 @@ public:
     ~Warrior() override = default;
 
 protected:
-    bool findAndAtack(std::shared_ptr<Map> map, std::function<void(const uint32_t, const uint32_t, const uint32_t)> &&callback) const override
+    bool findAndAtack(std::shared_ptr<Map> map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const override
     {
         std::vector<std::shared_ptr<IUnit>> enemies;
         map->scanAround(getId(), atackRadius, enemies);
@@ -30,10 +30,10 @@ protected:
         {
             return false;
         }
-        return meleeAtack(enemies, std::move(callback));
+        return meleeAtack(enemies, t);
     }
 
-    bool meleeAtack(const std::vector<std::shared_ptr<IUnit>> &enemies, std::function<void(const uint32_t, const uint32_t, const uint32_t)> &&callback) const
+    bool meleeAtack(const std::vector<std::shared_ptr<IUnit>> &enemies, std::tuple<uint32_t, uint32_t, uint32_t> &t) const
     {
         if (enemies.empty())
         {
@@ -80,7 +80,7 @@ protected:
             return false;
         }
         target->damage(_strength);
-        callback(target->getId(), _strength, target->getHp());
+        t = std::make_tuple(target->getId(), _strength, target->getHp());
         return true;
     }
 };

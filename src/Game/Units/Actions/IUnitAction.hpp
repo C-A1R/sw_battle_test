@@ -12,12 +12,20 @@ namespace sw
 
 class Map;
 
+enum class ActionResult
+{
+    success,
+    fail,
+    impossible, ///< if something prevents
+    skip
+};
+
 class IUnitAction
 {
 public:
     IUnitAction() = default;
     virtual ~IUnitAction() = default;
-    virtual bool exec(const int32_t) = 0;
+    virtual ActionResult exec(const int32_t) = 0;
 };
 
 class SingleAction : public IUnitAction

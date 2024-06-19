@@ -10,9 +10,9 @@ class WaitAction : public IUnitAction
 public:
     WaitAction() = default;
 protected:
-    bool exec(const int32_t tick) final
+    ActionResult exec(const int32_t tick) final
     {
-        return true;
+        return ActionResult::success;
     }
 };
 

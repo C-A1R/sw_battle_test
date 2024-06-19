@@ -12,13 +12,7 @@
 
 namespace sw
 {
-enum class ActionResult
-{
-    success,
-    fail,
-    impossible, ///< something prevents
-    skip
-};
+
 
 /// @brief  Unit interface
 class IUnit
@@ -34,7 +28,7 @@ public:
     virtual bool hasNextAction() const = 0;
     virtual bool execNextAction(const int32_t tick) = 0;
 
-    virtual bool findAndAtack(std::shared_ptr<Map> map, std::function<void(const uint32_t, const uint32_t, const uint32_t)> &&callback) const = 0;
+    virtual bool findAndAtack(std::shared_ptr<Map> map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const = 0;
     virtual void damage(const uint32_t points) = 0;
 };
 
@@ -71,9 +65,12 @@ protected:
             return false;
         }
         auto &act = _actions.front();
-        const bool res = act->exec(tick);
-        _actions.pop();
-        return res;
+        if (const auto result = act->exec(tick);
+            result != ActionResult::skip && result != ActionResult::impossible)
+        {
+            _actions.pop();
+        }
+        return true;
     }
 
     void damage(const uint32_t points) override

@@ -18,7 +18,7 @@ public:
                         , const uint32_t unitId
                         , const uint32_t targetX
                         , const uint32_t targetY);
-    bool exec(const int32_t tick) override;
+    ActionResult exec(const int32_t tick) override;
 };
 
 class MoveAction : public SingleAction
@@ -32,7 +32,7 @@ public:
                 , const uint32_t unitId
                 , const uint32_t targetX
                 , const uint32_t targetY);
-    bool exec(const int32_t tick) override;
+    ActionResult exec(const int32_t tick) override;
 };
 
 class MarchEndAction : public SingleAction
@@ -43,7 +43,7 @@ public:
                     , const std::shared_ptr<Map> &map
                     , const uint32_t unitId);
 
-    bool exec(const int32_t tick) override;
+    ActionResult exec(const int32_t tick) override;
 };
 
 } // namespace sw
