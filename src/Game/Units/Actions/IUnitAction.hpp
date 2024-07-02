@@ -5,7 +5,6 @@
 #include <queue>
 
 #include <IO/System/PrintDebug.hpp>
-#include <IO/System/EventLog.hpp>
 
 namespace sw
 {
@@ -31,13 +30,11 @@ public:
 class SingleAction : public IUnitAction
 {
 protected:
-    std::shared_ptr<EventLog>   _eventLog;
-    std::shared_ptr<Map>        _map;
+    std::shared_ptr<Map> _map;
 public:
     SingleAction(){}
-    SingleAction(const std::shared_ptr<EventLog> &eventLog, const std::shared_ptr<Map> &map)
-        : _eventLog{eventLog}
-        , _map{map}
+    SingleAction(const std::shared_ptr<Map> &map)
+        : _map{map}
     {
     }
 };

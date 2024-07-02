@@ -6,10 +6,10 @@
 namespace sw
 {
 
-Map::Map(const std::shared_ptr<const UnitRegister> &units, const uint32_t width, const uint32_t height)
-    : _units{units}
-    , _model(height, std::vector<uint32_t>(width, 0))
+void Map::init(const uint32_t width, const uint32_t height)
 {
+    _units = std::make_unique<UnitRegister>();
+    _model = std::vector(height, std::vector<uint32_t>(width, 0));
 }
 
 bool Map::isValid() const
@@ -17,14 +17,20 @@ bool Map::isValid() const
     return _model.size() && _model[0].size();
 }
 
-bool Map::spawn(const std::uint32_t unitId, const std::uint32_t x, const std::uint32_t y)
+bool Map::hasUnits() const
+{
+    return !_units->empty();
+}
+
+bool Map::spawn(std::shared_ptr<IUnit> unit, const std::uint32_t x, const std::uint32_t y)
 {
     if (!isVacant(x, y))
     {
         return false;
     }
-    _model[x][y] = unitId;
-    _coords.emplace(unitId, Point{x, y});
+    _model[x][y] = unit->getId();
+    _coords.emplace(unit->getId(), Point{x, y});
+    _units->insert(unit);
     return true;
 }
 

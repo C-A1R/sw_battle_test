@@ -3,6 +3,7 @@
 #include "../../Map.hpp"
 #include "../IUnit.hpp"
 
+#include <IO/System/EventLog.hpp>
 #include <IO/Events/MarchStarted.hpp>
 #include <IO/Events/UnitMoved.hpp>
 #include <IO/Events/MarchEnded.hpp>
@@ -11,12 +12,11 @@
 namespace sw
 {
 
-MarchStartAction::MarchStartAction(const std::shared_ptr<EventLog> &eventLog
-                    , const std::shared_ptr<Map> &map
+MarchStartAction::MarchStartAction(const std::shared_ptr<Map> &map
                     , const uint32_t unitId
                     , const uint32_t targetX
                     , const uint32_t targetY)
-    : SingleAction(eventLog, map)
+    : SingleAction(map)
     , _unitId{unitId}
     , _targetX{std::move(targetX)}
     , _targetY{std::move(targetY)}
@@ -31,17 +31,16 @@ ActionResult MarchStartAction::exec(const int32_t tick)
     {
         return ActionResult::fail;
     }
-    _eventLog->log(tick, io::MarchStarted{ _unitId, unitPoint.x, unitPoint.y, _targetX, _targetY });
+    EventLog::instance().log(tick, io::MarchStarted{ _unitId, unitPoint.x, unitPoint.y, _targetX, _targetY });
     return ActionResult::success;
 }
 
 
-MoveAction::MoveAction(const std::shared_ptr<EventLog> &eventLog
-            , const std::shared_ptr<Map> &map
+MoveAction::MoveAction(const std::shared_ptr<Map> &map
             , const uint32_t unitId
             , const uint32_t targetX
             , const uint32_t targetY) 
-    : SingleAction(eventLog, map)
+    : SingleAction(map)
     , _unitId{unitId}
     , _targetX{std::move(targetX)}
     , _targetY{std::move(targetY)}
@@ -63,7 +62,7 @@ ActionResult MoveAction::exec(const int32_t tick)
         uint32_t dam {0};
         uint32_t tHp {0};
         std::tie(tId, dam, tHp) = t;
-        _eventLog->log(tick, io::UnitAttacked{_unitId, tId, dam, tHp});
+        EventLog::instance().log(tick, io::UnitAttacked{_unitId, tId, dam, tHp});
         return ActionResult::skip;
     }
 
@@ -71,15 +70,13 @@ ActionResult MoveAction::exec(const int32_t tick)
     {
         return ActionResult::fail;
     }
-    _eventLog->log(tick, io::UnitMoved{ _unitId, _targetX, _targetY});
+    EventLog::instance().log(tick, io::UnitMoved{ _unitId, _targetX, _targetY});
     return ActionResult::success;
 }
 
 
-MarchEndAction::MarchEndAction(const std::shared_ptr<EventLog> &eventLog
-                , const std::shared_ptr<Map> &map
-                , const uint32_t unitId) 
-    : SingleAction(eventLog, map)
+MarchEndAction::MarchEndAction(const std::shared_ptr<Map> &map, const uint32_t unitId) 
+    : SingleAction(map)
     , _unitId{unitId}
 {
 }
@@ -92,7 +89,7 @@ ActionResult MarchEndAction::exec(const int32_t tick)
     {
         return ActionResult::fail;
     }
-    _eventLog->log(tick, io::MarchEnded{ _unitId, unitPoint.x, unitPoint.y });
+    EventLog::instance().log(tick, io::MarchEnded{ _unitId, unitPoint.x, unitPoint.y });
     return ActionResult::success;
 }
 
