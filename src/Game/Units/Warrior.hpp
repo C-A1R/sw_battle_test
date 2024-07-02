@@ -1,9 +1,11 @@
 #pragma once
 
-#include <algorithm>
-
-#include "IUnit.hpp"
+#include "Unit.hpp"
 #include "../Map.hpp"
+#include "../../IO/System/EventLog.hpp"
+#include "../../IO/Events/UnitAttacked.hpp"
+
+#include <algorithm>
 
 namespace sw
 {
@@ -22,7 +24,7 @@ public:
     ~Warrior() override = default;
 
 protected:
-    bool findAndAtack(const std::shared_ptr<Map> &map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const override
+    bool findAndAtack(const std::shared_ptr<Map> &map) const override
     {
         std::vector<std::shared_ptr<IUnit>> enemies;
         map->scanAround(getId(), _meleeAtackDistance, _meleeAtackDistance, enemies);
@@ -30,10 +32,10 @@ protected:
         {
             return false;
         }
-        return meleeAtack(enemies, t);
+        return meleeAtack(enemies);
     }
 
-    bool meleeAtack(const std::vector<std::shared_ptr<IUnit>> &enemies, std::tuple<uint32_t, uint32_t, uint32_t> &t) const
+    bool meleeAtack(const std::vector<std::shared_ptr<IUnit>> &enemies) const
     {
         if (enemies.empty())
         {
@@ -45,8 +47,8 @@ protected:
         {
             return false;
         }
-        uint32_t harm = target->damage(_strength);
-        t = std::make_tuple(target->getId(), _strength, target->getHp());
+        const uint32_t harm = target->damage(_strength);
+        EventLog::instance().log(0/*tick*/, io::UnitAttacked{getId(), target->getId(), harm, target->getHp()}); /// @todo tock
         return true;
     }
 

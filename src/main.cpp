@@ -1,6 +1,3 @@
-#include <iostream>
-#include <fstream>
-
 #include <IO/System/CommandParser.hpp>
 #include <IO/System/PrintDebug.hpp>
 #include <IO/Commands/CreateMap.hpp>
@@ -11,6 +8,8 @@
 
 #include "Game/Battle.hpp"
 
+#include <iostream>
+#include <fstream>
 
 int main(int argc, char** argv)
 {

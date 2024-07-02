@@ -63,12 +63,7 @@ bool Map::isVacant(const std::uint32_t x, const std::uint32_t y) const
     return _model[x][y] == 0;
 }
 
-Point Map::getPoint(const std::uint32_t unitId) const
-{
-    return _coords.find(unitId)->second;
-}
-
-Point Map::getPoint(const std::uint32_t unitId, bool &ok) const
+Point Map::getUnitPoint(const std::uint32_t unitId, bool &ok) const
 {
     auto it = _coords.find(unitId);
     if (it == _coords.end())
@@ -83,7 +78,7 @@ Point Map::getPoint(const std::uint32_t unitId, bool &ok) const
 void Map::scanAround(const uint32_t unitId, const uint32_t radiusBegin, const uint32_t range, std::vector<std::shared_ptr<IUnit>> &units) const
 {
     bool ok = false;
-    auto unitPoint = getPoint(unitId, ok);
+    auto unitPoint = getUnitPoint(unitId, ok);
     if (!ok)
     {
         return;

@@ -3,7 +3,7 @@
 #include "IBattleAction.h"
 
 #include "../Map.hpp"
-#include "../Units/Actions/MoveAction.hpp"
+#include "../Units/UnitActions/MoveAction.hpp"
 
 namespace sw
 {
@@ -12,12 +12,14 @@ class BattleAction_March : public IBattleAction
 {
     io::March               _cmd;
     std::shared_ptr<Map>    _map;
+
 public:
     BattleAction_March(io::March &&cmd, std::shared_ptr<Map> map)
         : _cmd{std::move(cmd)}
         , _map{map}
     {
     }
+
 protected:
     void exec(const uint32_t tick) override
     {
@@ -26,7 +28,7 @@ protected:
             return;
         }
 
-        auto unit = _map->_units->find(_cmd.unitId);
+        auto unit = _map->getUnit(_cmd.unitId);
         if (!unit)
         {
             return;
@@ -40,11 +42,12 @@ protected:
         }
     }
 
+private:
     /// @brief separate march to several moves
     void splitMarch(std::vector<std::shared_ptr<IUnitAction>> &actions)
     {
         bool ok = true;
-        const Point currentPoint = _map->getPoint(_cmd.unitId, ok);
+        const Point currentPoint = _map->getUnitPoint(_cmd.unitId, ok);
         if (!ok || (currentPoint.x == _cmd.targetX && currentPoint.y == _cmd.targetY))
         {
             return;
@@ -56,35 +59,37 @@ protected:
         actions.reserve(marchLen + 2);
         //start march
         actions.emplace_back(std::make_shared<MarchStartAction>(_map, _cmd.unitId, _cmd.targetX, _cmd.targetY));
+        const Point targetPoint{_cmd.targetX, _cmd.targetY};
         Point tmpPoint = currentPoint;
-        //move
-        auto _doStep = [&tmpPoint, this]()
+        //moving
+        while (tmpPoint != targetPoint)
         {
-            if (tmpPoint.x < _cmd.targetX)
-            {
-                ++tmpPoint.x;
-            }
-            else if (tmpPoint.x > _cmd.targetX)
-            {
-                --tmpPoint.x;
-            }
-            
-            if (tmpPoint.y < _cmd.targetY)
-            {
-                ++tmpPoint.y;
-            }
-            else if (tmpPoint.y > _cmd.targetY)
-            {
-                --tmpPoint.y;
-            }
-        };
-        while (!(tmpPoint.x == _cmd.targetX && tmpPoint.y == _cmd.targetY))
-        {
-            _doStep();
+            doStep(targetPoint, tmpPoint);
             actions.emplace_back(std::make_shared<MoveAction>(_map, _cmd.unitId, tmpPoint.x, tmpPoint.y));
         }
         //end march
         actions.emplace_back(std::make_shared<MarchEndAction>(_map, _cmd.unitId));
+    }
+
+    void doStep(const Point &targetPoint, Point &currentPoint)
+    {
+        if (currentPoint.x < _cmd.targetX)
+        {
+            ++currentPoint.x;
+        }
+        else if (currentPoint.x > _cmd.targetX)
+        {
+            --currentPoint.x;
+        }
+        
+        if (currentPoint.y < _cmd.targetY)
+        {
+            ++currentPoint.y;
+        }
+        else if (currentPoint.y > _cmd.targetY)
+        {
+            --currentPoint.y;
+        }
     }
 };
 

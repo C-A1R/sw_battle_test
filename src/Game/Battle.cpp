@@ -1,8 +1,7 @@
 #include "Battle.hpp"
 
-#include <IO/System/EventLog.hpp>
-#include <IO/Events/UnitAttacked.hpp>
-#include <IO/Events/UnitDied.hpp>
+#include "IO/System/EventLog.hpp"
+#include "IO/Events/UnitDied.hpp"
 
 #include "BattleActions/BattleAction_CreateMap.h"
 #include "BattleActions/BattleAction_SpawnWarrior.h"
@@ -63,12 +62,13 @@ void Battle::run()
     }
 
     /// main game loop
+    const std::unique_ptr<UnitRegister> &units = _map->getUnits();
     bool noActionsExecuted = false;
     std::vector<uint32_t> toRemove;
     while (!noActionsExecuted)
     {
         noActionsExecuted = true;
-        for(auto i = _map->_units->begin(); i != _map->_units->end(); ++i)
+        for(auto i = units->begin(); i != units->end(); ++i)
         {
             auto &unit = i->second;
             if (!unit->getHp())
@@ -78,28 +78,17 @@ void Battle::run()
                 continue;
             }
 
-            if (!unit->hasNextAction())
+            if (unit->execNextAction(_map, tick))
             {
-                std::tuple<uint32_t, uint32_t, uint32_t> t;
-                if (unit->findAndAtack(_map, t))
-                {
-                    uint32_t tId {0};
-                    uint32_t dam {0};
-                    uint32_t tHp {0};
-                    std::tie(tId, dam, tHp) = t;
-                    EventLog::instance().log(tick++, io::UnitAttacked{unit->getId(), tId, dam, tHp});
-                }
-                continue;
+                ++tick;
+                noActionsExecuted = false;
             }
-
-            unit->execNextAction(tick++);
-            noActionsExecuted = false;
         }
 
         for (const uint32_t id : toRemove)
         {
             _map->kill(id);
-            _map->_units->remove(id);
+            units->remove(id);
         }
         toRemove.clear();
     }

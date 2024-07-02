@@ -3,11 +3,10 @@
 #include "../../Map.hpp"
 #include "../IUnit.hpp"
 
-#include <IO/System/EventLog.hpp>
-#include <IO/Events/MarchStarted.hpp>
-#include <IO/Events/UnitMoved.hpp>
-#include <IO/Events/MarchEnded.hpp>
-#include <IO/Events/UnitAttacked.hpp>
+#include "../../../IO/System/EventLog.hpp"
+#include "../../../IO/Events/MarchStarted.hpp"
+#include "../../../IO/Events/UnitMoved.hpp"
+#include "../../../IO/Events/MarchEnded.hpp"
 
 namespace sw
 {
@@ -26,7 +25,7 @@ MarchStartAction::MarchStartAction(const std::shared_ptr<Map> &map
 ActionResult MarchStartAction::exec(const int32_t tick) 
 {
     bool ok = false;
-    auto unitPoint = _map->getPoint(_unitId, ok);
+    auto unitPoint = _map->getUnitPoint(_unitId, ok);
     if (!ok)
     {
         return ActionResult::fail;
@@ -55,14 +54,8 @@ ActionResult MoveAction::exec(const int32_t tick)
         return ActionResult::fail;
     }
 
-    std::tuple<uint32_t, uint32_t, uint32_t> t;
-    if (unit->findAndAtack(_map, t))
+    if (unit->findAndAtack(_map))
     {
-        uint32_t tId {0};
-        uint32_t dam {0};
-        uint32_t tHp {0};
-        std::tie(tId, dam, tHp) = t;
-        EventLog::instance().log(tick, io::UnitAttacked{_unitId, tId, dam, tHp});
         return ActionResult::skip;
     }
 
@@ -84,7 +77,7 @@ MarchEndAction::MarchEndAction(const std::shared_ptr<Map> &map, const uint32_t u
 ActionResult MarchEndAction::exec(const int32_t tick)
 {
     bool ok = false;
-    auto unitPoint = _map->getPoint(_unitId, ok);
+    auto unitPoint = _map->getUnitPoint(_unitId, ok);
     if (!ok)
     {
         return ActionResult::fail;

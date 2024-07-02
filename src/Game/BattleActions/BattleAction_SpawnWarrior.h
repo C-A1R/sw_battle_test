@@ -13,12 +13,14 @@ class BattleAction_SpawnWarrior : public IBattleAction
 {
     io::SpawnWarrior        _cmd;
     std::shared_ptr<Map>    _map;
+
 public:
     BattleAction_SpawnWarrior(io::SpawnWarrior &&cmd, std::shared_ptr<Map> map)
         : _cmd{std::move(cmd)}
         , _map{map}
     {
     }
+    
 protected:
     void exec(const uint32_t tick) override
     {

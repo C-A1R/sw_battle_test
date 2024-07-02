@@ -21,18 +21,18 @@ public:
     ~Archer() override = default;
 
 protected:
-    bool findAndAtack(const std::shared_ptr<Map> &map, std::tuple<uint32_t, uint32_t, uint32_t> &t) const override
+    bool findAndAtack(const std::shared_ptr<Map> &map) const override
     {
         std::vector<std::shared_ptr<IUnit>> enemies;
         map->scanAround(getId(), _minShotDistance, _range, enemies);
         if (enemies.empty())
         {
-            return Warrior::findAndAtack(map, t);
+            return Warrior::findAndAtack(map);
         }
-        return rangeAtack(map, enemies, t);
+        return rangeAtack(map, enemies);
     }
 
-    bool rangeAtack(const std::shared_ptr<Map> &map, const std::vector<std::shared_ptr<IUnit>> &enemies, std::tuple<uint32_t, uint32_t, uint32_t> &t) const
+    bool rangeAtack(const std::shared_ptr<Map> &map, const std::vector<std::shared_ptr<IUnit>> &enemies) const
     {
         if (enemies.empty() || !map)
         {
@@ -44,8 +44,8 @@ protected:
         {
             return false;
         }
-        uint32_t harm = target->damage(_agility);
-        t = std::make_tuple(target->getId(), harm, target->getHp());
+        const uint32_t harm = target->damage(_agility);
+        EventLog::instance().log(0/*tick*/, io::UnitAttacked{getId(), target->getId(), harm, target->getHp()}); /// @todo tock
         return true;
     }
 
@@ -63,7 +63,7 @@ protected:
 
         uint32_t distance = 0;
         bool ok = false;
-        auto myPoint = map->getPoint(getId(), ok);
+        auto myPoint = map->getUnitPoint(getId(), ok);
         if (!ok)
         {
             return nullptr;
@@ -74,7 +74,7 @@ protected:
         for (const auto &e : enemies)
         {
             bool ok = false;
-            const Point &ePoint = map->getPoint(e->getId(), ok);
+            const Point &ePoint = map->getUnitPoint(e->getId(), ok);
             if (!ok)
             {
                 continue;

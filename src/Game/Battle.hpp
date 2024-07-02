@@ -1,8 +1,5 @@
 #pragma once
 
-#include <memory>
-#include <queue>
-
 #include "IO/Commands/CreateMap.hpp"
 #include "IO/Commands/SpawnWarrior.hpp"
 #include "IO/Commands/SpawnArcher.hpp"
@@ -11,6 +8,9 @@
 
 #include "Map.hpp"
 #include "BattleActions/IBattleAction.h"
+
+#include <memory>
+#include <queue>
 
 namespace sw
 {

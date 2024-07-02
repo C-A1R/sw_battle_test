@@ -1,10 +1,9 @@
 #pragma once
 
+#include "../../../IO/System/PrintDebug.hpp"
+
 #include <cstdint>
 #include <memory>
-#include <queue>
-
-#include <IO/System/PrintDebug.hpp>
 
 namespace sw
 {

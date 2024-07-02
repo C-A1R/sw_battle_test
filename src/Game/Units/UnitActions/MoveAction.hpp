@@ -1,8 +1,8 @@
 #pragma once
 
-#include <cstdint>
-
 #include "IUnitAction.hpp"
+
+#include <cstdint>
 
 namespace sw
 {
@@ -37,9 +37,7 @@ class MarchEndAction : public SingleAction
 {
     uint32_t _unitId {0};
 public:
-    MarchEndAction(const std::shared_ptr<Map> &map
-                  , const uint32_t unitId);
-
+    MarchEndAction(const std::shared_ptr<Map> &map, const uint32_t unitId);
     ActionResult exec(const int32_t tick) override;
 };
 
