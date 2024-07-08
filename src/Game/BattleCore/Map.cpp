@@ -1,25 +1,19 @@
 #include "Map.hpp"
 
 #include "UnitRegister.hpp"
-#include "Units/IUnit.hpp"
+#include "../Units/IUnit.hpp"
 
 namespace sw
 {
 
 void Map::init(const uint32_t width, const uint32_t height)
 {
-    _units = std::make_unique<UnitRegister>();
     _model = std::vector(height, std::vector<uint32_t>(width, 0));
 }
 
 bool Map::isValid() const
 {
     return _model.size() && _model[0].size();
-}
-
-bool Map::hasUnits() const
-{
-    return !_units->empty();
 }
 
 bool Map::spawn(std::shared_ptr<IUnit> unit, const std::uint32_t x, const std::uint32_t y)
@@ -29,8 +23,7 @@ bool Map::spawn(std::shared_ptr<IUnit> unit, const std::uint32_t x, const std::u
         return false;
     }
     _model[x][y] = unit->getId();
-    _coords.emplace(unit->getId(), Point{x, y});
-    _units->insert(unit);
+    _points.emplace(unit->getId(), Point{x, y});
     return true;
 }
 
@@ -40,8 +33,8 @@ bool Map::move(const std::uint32_t unitId, const std::uint32_t targetX, const st
     {
         return false;/// @todo impossible
     }
-    auto it = _coords.find(unitId);
-    if (it == _coords.end())
+    auto it = _points.find(unitId);
+    if (it == _points.end())
     {
         return false;
     }
@@ -65,8 +58,8 @@ bool Map::isVacant(const std::uint32_t x, const std::uint32_t y) const
 
 Point Map::getUnitPoint(const std::uint32_t unitId, bool &ok) const
 {
-    auto it = _coords.find(unitId);
-    if (it == _coords.end())
+    auto it = _points.find(unitId);
+    if (it == _points.end())
     {
         ok = false;
         return Point();
@@ -75,7 +68,7 @@ Point Map::getUnitPoint(const std::uint32_t unitId, bool &ok) const
     return it->second;
 }
 
-void Map::scanAround(const uint32_t unitId, const uint32_t radiusBegin, const uint32_t range, std::vector<std::shared_ptr<IUnit>> &units) const
+void Map::scanAround(const uint32_t unitId, const uint32_t radiusBegin, const uint32_t range, std::vector<uint32_t> &unitIds) const
 {
     bool ok = false;
     auto unitPoint = getUnitPoint(unitId, ok);
@@ -106,11 +99,14 @@ void Map::scanAround(const uint32_t unitId, const uint32_t radiusBegin, const ui
 
             if (!isVacant(x, y) && (x != ux || y != uy))
             {
-                auto unit = _units->find(_model[x][y]); 
-                if (unit && unit->getHp() > 0)
-                {
-                    units.push_back(unit);
-                }
+                unitIds.emplace_back(_model[x][y]);
+
+                ///@todo
+                // auto unit = _units->find(_model[x][y]); 
+                // if (unit && unit->getHp() > 0)
+                // {
+                //     units.push_back(unit);
+                // }
             }
         }
     }
@@ -118,19 +114,14 @@ void Map::scanAround(const uint32_t unitId, const uint32_t radiusBegin, const ui
 
 bool Map::kill(const std::uint32_t unitId)
 {
-    auto it = _coords.find(unitId);
-    if (it == _coords.end())
+    auto it = _points.find(unitId);
+    if (it == _points.end())
     {
         return false;
     }
     _model[it->second.x][it->second.y] = 0;
-    _coords.erase(it);
+    _points.erase(it);
     return true;
-}
-
-std::shared_ptr<IUnit> Map::getUnit(const std::uint32_t unitId) const
-{
-    return _units->find(unitId);
 }
 
 } // namespace sw

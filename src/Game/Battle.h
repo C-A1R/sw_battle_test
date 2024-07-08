@@ -1,13 +1,12 @@
 #pragma once
 
+#include "BattleActions/IBattleAction.h"
+
 #include "IO/Commands/CreateMap.hpp"
 #include "IO/Commands/SpawnWarrior.hpp"
 #include "IO/Commands/SpawnArcher.hpp"
 #include "IO/Commands/March.hpp"
 #include "IO/Commands/Wait.hpp"
-
-#include "Map.hpp"
-#include "BattleActions/IBattleAction.h"
 
 #include <memory>
 #include <queue>
@@ -15,9 +14,11 @@
 namespace sw
 {
 
+class Core;
+
 class Battle
 {
-    std::shared_ptr<Map>                        _map;
+    std::shared_ptr<Core>                       _core;
     std::queue<std::unique_ptr<IBattleAction>>  _startup_actions;
 
 public:

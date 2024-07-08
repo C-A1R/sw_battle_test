@@ -6,7 +6,7 @@
 #include <IO/Commands/March.hpp>
 #include <IO/Commands/Wait.hpp>
 
-#include "Game/Battle.hpp"
+#include "Game/Battle.h"
 
 #include <iostream>
 #include <fstream>

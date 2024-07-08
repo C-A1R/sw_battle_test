@@ -8,7 +8,7 @@
 namespace sw
 {
 
-class Map;
+class Core;
 
 enum class ActionResult
 {
@@ -29,11 +29,11 @@ public:
 class SingleAction : public IUnitAction
 {
 protected:
-    std::shared_ptr<Map> _map;
+    std::shared_ptr<Core> _core;
 public:
     SingleAction(){}
-    SingleAction(const std::shared_ptr<Map> &map)
-        : _map{map}
+    SingleAction(const std::shared_ptr<Core> &core)
+        : _core{core}
     {
     }
 };

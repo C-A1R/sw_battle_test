@@ -1,6 +1,6 @@
 #include "MoveAction.hpp"
 
-#include "../../Map.hpp"
+#include "../../BattleCore/Core.hpp"
 #include "../IUnit.hpp"
 
 #include "../../../IO/System/EventLog.hpp"
@@ -11,11 +11,11 @@
 namespace sw
 {
 
-MarchStartAction::MarchStartAction(const std::shared_ptr<Map> &map
-                    , const uint32_t unitId
-                    , const uint32_t targetX
-                    , const uint32_t targetY)
-    : SingleAction(map)
+MarchStartAction::MarchStartAction(const std::shared_ptr<Core> &core
+                                 , const uint32_t unitId
+                                 , const uint32_t targetX
+                                 , const uint32_t targetY)
+    : SingleAction(core)
     , _unitId{unitId}
     , _targetX{std::move(targetX)}
     , _targetY{std::move(targetY)}
@@ -25,7 +25,7 @@ MarchStartAction::MarchStartAction(const std::shared_ptr<Map> &map
 ActionResult MarchStartAction::exec(const int32_t tick) 
 {
     bool ok = false;
-    auto unitPoint = _map->getUnitPoint(_unitId, ok);
+    auto unitPoint = _core->getUnitPoint(_unitId, ok);
     if (!ok)
     {
         return ActionResult::fail;
@@ -35,11 +35,11 @@ ActionResult MarchStartAction::exec(const int32_t tick)
 }
 
 
-MoveAction::MoveAction(const std::shared_ptr<Map> &map
+MoveAction::MoveAction(const std::shared_ptr<Core> &core
             , const uint32_t unitId
             , const uint32_t targetX
             , const uint32_t targetY) 
-    : SingleAction(map)
+    : SingleAction(core)
     , _unitId{unitId}
     , _targetX{std::move(targetX)}
     , _targetY{std::move(targetY)}
@@ -48,18 +48,18 @@ MoveAction::MoveAction(const std::shared_ptr<Map> &map
 
 ActionResult MoveAction::exec(const int32_t tick)
 {
-    auto unit = _map->getUnit(_unitId);
+    auto unit = _core->getUnit(_unitId);
     if (!unit)
     {
         return ActionResult::fail;
     }
 
-    if (unit->findAndAtack(_map))
+    if (unit->findAndAtack(_core, tick))
     {
         return ActionResult::skip;
     }
 
-    if (!_map->move(_unitId, _targetX, _targetY))
+    if (!_core->move(_unitId, _targetX, _targetY))
     {
         return ActionResult::fail;
     }
@@ -68,8 +68,8 @@ ActionResult MoveAction::exec(const int32_t tick)
 }
 
 
-MarchEndAction::MarchEndAction(const std::shared_ptr<Map> &map, const uint32_t unitId) 
-    : SingleAction(map)
+MarchEndAction::MarchEndAction(const std::shared_ptr<Core> &core, const uint32_t unitId) 
+    : SingleAction(core)
     , _unitId{unitId}
 {
 }
@@ -77,7 +77,7 @@ MarchEndAction::MarchEndAction(const std::shared_ptr<Map> &map, const uint32_t u
 ActionResult MarchEndAction::exec(const int32_t tick)
 {
     bool ok = false;
-    auto unitPoint = _map->getUnitPoint(_unitId, ok);
+    auto unitPoint = _core->getUnitPoint(_unitId, ok);
     if (!ok)
     {
         return ActionResult::fail;

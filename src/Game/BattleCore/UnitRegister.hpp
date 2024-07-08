@@ -9,6 +9,7 @@ namespace sw
 {
 
 class IUnit;
+class Map;
 
 class UnitRegister
 {

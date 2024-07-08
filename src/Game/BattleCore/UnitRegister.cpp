@@ -1,6 +1,7 @@
 #include "UnitRegister.hpp"
 
-#include "Units/IUnit.hpp"
+#include "../Units/IUnit.hpp"
+#include "Map.hpp"
 
 namespace sw
 {

@@ -2,7 +2,7 @@
 
 #include "IBattleAction.h"
 
-#include "../Map.hpp"
+#include "../BattleCore/Core.hpp"
 #include "../Units/Warrior.hpp"
 #include "../../IO/Events/UnitSpawned.hpp"
 
@@ -12,23 +12,24 @@ namespace sw
 class BattleAction_SpawnWarrior : public IBattleAction
 {
     io::SpawnWarrior        _cmd;
-    std::shared_ptr<Map>    _map;
+    std::shared_ptr<Core>   _core;
 
 public:
-    BattleAction_SpawnWarrior(io::SpawnWarrior &&cmd, std::shared_ptr<Map> map)
+    BattleAction_SpawnWarrior(io::SpawnWarrior &&cmd, const std::shared_ptr<Core> &core)
         : _cmd{std::move(cmd)}
-        , _map{map}
+        , _core{core}
     {
     }
     
 protected:
     void exec(const uint32_t tick) override
     {
-        if (!_map || !_map->isValid())
+        if (!_core->isValid())
         {
             return;
         }
-        if (_map->spawn(std::make_shared<Warrior>(_cmd.unitId, _cmd.hp, _cmd.strength), _cmd.x, _cmd.y))
+
+        if (_core->spawn(std::make_shared<Warrior>(_cmd.unitId, _cmd.hp, _cmd.strength), _cmd.x, _cmd.y))
         {
             EventLog::instance().log(tick, io::UnitSpawned{_cmd.unitId, "Warrior", _cmd.x, _cmd.y });
         }
